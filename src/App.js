@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import './App.css'
 
-class App extends Component {
+class App extends React.PureComponent {
 
  state = {
   toDo: [
@@ -107,7 +107,7 @@ listOfStatusKeys = Object.keys(this.listOfStatus)
  }
 }
 
-const ListOfTasks = props => {
+const ListOfTasks = React.memo(props => {
   console.log('LISTOFTASKS')
   return (
     <div className="column border padding25">
@@ -122,10 +122,10 @@ const ListOfTasks = props => {
         }
     </div>
   )
-}
+})
 
 
-const Task = props => {
+const Task = React.memo(props => {
   console.log('TASK')
   return (
     <div style={{ marginBottom: 10 }}>
@@ -142,7 +142,7 @@ const Task = props => {
       </div>
     </div>
   )
-}
+})
 
 const AddTask = props => {
 
