@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import './App.css'
 
-class App extends React.PureComponent {
+
+class App extends Component {
 
  state = {
   toDo: [
@@ -39,38 +40,57 @@ listOfStatusKeys = Object.keys(this.listOfStatus)
     })
   }
 
+    // Helper function, we are going to re-utilize the logic
+    addTaskToCategoryHelper = (title, description, type) => {
+      let newTask = {};
+      newTask.id = Date.now();
+      newTask.title = title;
+      newTask.description = description;
+  
+      let category = type
+
+      this.setState({
+       [category]: [...this.state[category], newTask],
+        title: '',
+        description: ''
+      })
+  
+    }
+
    // Add by default to To Do but user can change it
    addTaskHandler = (event) => {
      event.preventDefault();
-     let newTask = {};
-     newTask.id = Date.now();
-     newTask.title = this.state.title;
-     newTask.description = this.state.description;
-
-     let category = this.state.type
-
-     this.setState({
-      [category]: [...this.state[category], newTask],
-       title: '',
-       description: ''
-     })
+     this.addTaskToCategoryHelper(this.state.title, this.state.description, this.state.type)
   }
   
   // Remove
   removeTaskHandler = (taskId, taskType) => {
-    let newStatusState = [...this.state[taskType]];
-    newStatusState = newStatusState.filter(element => element.id !== taskId) 
+    let newStatusStateTemp = [...this.state[taskType]];
+
+    let taskToRemove = newStatusStateTemp.filter(element => element.id === taskId) 
+    let newStatusState = newStatusStateTemp.filter(element => element.id !== taskId) 
+
     this.setState({
       [taskType]: newStatusState
     })
+    // To return the element {} not the array with the element [{}]
+    return taskToRemove[0]
   }
 
   // Move from one to other column (first and last should not move)
-  moveTask = (event, currentColumn, prevOrNext) => {
+  moveTask = (event, currentColumn, prevOrNext, taskId) => {
     event.preventDefault();
-    console.log(event.target, currentColumn, prevOrNext)
-  }
 
+    const listWithoutElement = this.removeTaskHandler(taskId, event.target.name)
+
+    let moveTo = ''
+
+    const currentIndex = this.listOfStatusKeys.indexOf(currentColumn)
+    prevOrNext.previous ? moveTo = this.listOfStatusKeys[currentIndex - 1] : moveTo = this.listOfStatusKeys[currentIndex + 1]
+
+    this.addTaskToCategoryHelper(listWithoutElement.title, listWithoutElement.description, moveTo)
+
+  }
 
  render() {
    console.log('APP')
@@ -117,12 +137,32 @@ const ListOfTasks = React.memo(props => {
             return <Task key={index} type={props.type}
             onClickRemove={props.onClickRemove}
             onMoveTask={props.onMoveTask}
+            listOfStatus={props.listOfStatus}
             >{element}</Task>
           })
         }
     </div>
   )
 })
+
+
+// We could improve the logic but I want to show you an easy yet verbose way
+const renderMoreButton = (listOfStatus, currentCategory, onMoveTask, elementId) => {
+  console.log('renderMoreButton()')
+  const tempArr = Object.keys({...listOfStatus})
+
+  return (
+    <React.Fragment>
+      <Button currentCategory={currentCategory} onMoveTask={onMoveTask} 
+        elementId={elementId}
+        disabled={tempArr[0] === currentCategory} previous>Move</Button>
+
+      <Button currentCategory={currentCategory} onMoveTask={onMoveTask} 
+        elementId={elementId}
+        disabled={tempArr[tempArr.length - 1] === currentCategory} next>Move</Button>
+    </React.Fragment>
+  )
+}
 
 
 const Task = React.memo(props => {
@@ -135,12 +175,20 @@ const Task = React.memo(props => {
           onClick={() => props.onClickRemove(props.children.id, props.type)}>[Remove me]
         </button>
         <div>
-          <button onClick={(event) => props.onMoveTask(event, 'currentColumn', 'prevOrNext')}
-          name={props.type}
-          >Move</button>
+          {renderMoreButton(props.listOfStatus, props.type, props.onMoveTask, props.children.id)}
         </div>
       </div>
     </div>
+  )
+})
+
+const Button = React.memo(props => {
+  console.log('Button')
+  return (
+    <button onClick={(event) => props.onMoveTask(event, props.currentCategory, 
+      { previous: props.previous || null, next: props.next || null}, props.elementId)}
+    name={props.currentCategory} disabled={props.disabled}
+    >{props.children}</button>
   )
 })
 
